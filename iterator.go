@@ -11,6 +11,27 @@ import (
 
 // Iterator provides a way to seek to specific keys and iterate through
 // the keyspace from that point, as well as access the values of those keys.
+// This is the abstract interface that all iterators must implement, see
+// NativeIterator below for a concrete implementation.
+//
+type Iterator interface {
+	Valid() bool
+	ValidForPrefix(prefix []byte) bool
+	Key() *Slice
+	Value() *Slice
+	Next()
+	Prev()
+	SeekToFirst()
+	SeekToLast()
+	Seek(key []byte)
+	Err() error
+	Close()
+}
+
+// NativeIterator provides a way to seek to specific keys and iterate through
+// the keyspace from that point, as well as access the values of those keys.
+//
+// It implements the Iterator interface.
 //
 // For example:
 //
@@ -26,24 +47,24 @@ import (
 //          return err
 //      }
 //
-type Iterator struct {
+type NativeIterator struct {
 	c *C.rocksdb_iterator_t
 }
 
 // NewNativeIterator creates a Iterator object.
-func NewNativeIterator(c unsafe.Pointer) *Iterator {
-	return &Iterator{(*C.rocksdb_iterator_t)(c)}
+func NewNativeIterator(c unsafe.Pointer) *NativeIterator {
+	return &NativeIterator{(*C.rocksdb_iterator_t)(c)}
 }
 
 // Valid returns false only when an Iterator has iterated past either the
 // first or the last key in the database.
-func (iter *Iterator) Valid() bool {
+func (iter *NativeIterator) Valid() bool {
 	return C.rocksdb_iter_valid(iter.c) != 0
 }
 
 // ValidForPrefix returns false only when an Iterator has iterated past the
 // first or the last key in the database or the specified prefix.
-func (iter *Iterator) ValidForPrefix(prefix []byte) bool {
+func (iter *NativeIterator) ValidForPrefix(prefix []byte) bool {
 	if C.rocksdb_iter_valid(iter.c) == 0 {
 		return false
 	}
@@ -55,7 +76,7 @@ func (iter *Iterator) ValidForPrefix(prefix []byte) bool {
 }
 
 // Key returns the key the iterator currently holds.
-func (iter *Iterator) Key() *Slice {
+func (iter *NativeIterator) Key() *Slice {
 	var cLen C.size_t
 	cKey := C.rocksdb_iter_key(iter.c, &cLen)
 	if cKey == nil {
@@ -65,7 +86,7 @@ func (iter *Iterator) Key() *Slice {
 }
 
 // Value returns the value in the database the iterator currently holds.
-func (iter *Iterator) Value() *Slice {
+func (iter *NativeIterator) Value() *Slice {
 	var cLen C.size_t
 	cVal := C.rocksdb_iter_value(iter.c, &cLen)
 	if cVal == nil {
@@ -75,34 +96,34 @@ func (iter *Iterator) Value() *Slice {
 }
 
 // Next moves the iterator to the next sequential key in the database.
-func (iter *Iterator) Next() {
+func (iter *NativeIterator) Next() {
 	C.rocksdb_iter_next(iter.c)
 }
 
 // Prev moves the iterator to the previous sequential key in the database.
-func (iter *Iterator) Prev() {
+func (iter *NativeIterator) Prev() {
 	C.rocksdb_iter_prev(iter.c)
 }
 
 // SeekToFirst moves the iterator to the first key in the database.
-func (iter *Iterator) SeekToFirst() {
+func (iter *NativeIterator) SeekToFirst() {
 	C.rocksdb_iter_seek_to_first(iter.c)
 }
 
 // SeekToLast moves the iterator to the last key in the database.
-func (iter *Iterator) SeekToLast() {
+func (iter *NativeIterator) SeekToLast() {
 	C.rocksdb_iter_seek_to_last(iter.c)
 }
 
 // Seek moves the iterator to the position greater than or equal to the key.
-func (iter *Iterator) Seek(key []byte) {
+func (iter *NativeIterator) Seek(key []byte) {
 	cKey := byteToChar(key)
 	C.rocksdb_iter_seek(iter.c, cKey, C.size_t(len(key)))
 }
 
 // Err returns nil if no errors happened during iteration, or the actual
 // error otherwise.
-func (iter *Iterator) Err() error {
+func (iter *NativeIterator) Err() error {
 	var cErr *C.char
 	C.rocksdb_iter_get_error(iter.c, &cErr)
 	if cErr != nil {
@@ -113,7 +134,7 @@ func (iter *Iterator) Err() error {
 }
 
 // Close closes the iterator.
-func (iter *Iterator) Close() {
+func (iter *NativeIterator) Close() {
 	C.rocksdb_iter_destroy(iter.c)
 	iter.c = nil
 }

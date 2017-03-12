@@ -365,14 +365,14 @@ func (db *DB) Write(opts *WriteOptions, batch *WriteBatch) error {
 
 // NewIterator returns an Iterator over the the database that uses the
 // ReadOptions given.
-func (db *DB) NewIterator(opts *ReadOptions) *Iterator {
+func (db *DB) NewIterator(opts *ReadOptions) Iterator {
 	cIter := C.rocksdb_create_iterator(db.c, opts.c)
 	return NewNativeIterator(unsafe.Pointer(cIter))
 }
 
 // NewIteratorCF returns an Iterator over the the database and column family
 // that uses the ReadOptions given.
-func (db *DB) NewIteratorCF(opts *ReadOptions, cf *ColumnFamilyHandle) *Iterator {
+func (db *DB) NewIteratorCF(opts *ReadOptions, cf *ColumnFamilyHandle) Iterator {
 	cIter := C.rocksdb_create_iterator_cf(db.c, opts.c, cf.c)
 	return NewNativeIterator(unsafe.Pointer(cIter))
 }
