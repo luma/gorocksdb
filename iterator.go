@@ -24,6 +24,7 @@ type Iterator interface {
 	SeekToFirst()
 	SeekToLast()
 	Seek(key []byte)
+	SeekForPrev(key []byte)
 	Err() error
 	Close()
 }
@@ -119,6 +120,13 @@ func (iter *NativeIterator) SeekToLast() {
 func (iter *NativeIterator) Seek(key []byte) {
 	cKey := byteToChar(key)
 	C.rocksdb_iter_seek(iter.c, cKey, C.size_t(len(key)))
+}
+
+// SeekForPrev moves the iterator to the last key that is less than or equal
+// to the target key.
+func (iter *NativeIterator) SeekForPrev(key []byte) {
+	cKey := byteToChar(key)
+	C.rocksdb_iter_seek_for_prev(iter.c, cKey, C.size_t(len(key)))
 }
 
 // Err returns nil if no errors happened during iteration, or the actual
