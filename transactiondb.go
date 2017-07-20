@@ -41,6 +41,17 @@ func OpenTransactionDb(
 	}, nil
 }
 
+// Write writes a WriteBatch to the database
+func (db *TransactionDB) Write(opts *WriteOptions, batch *WriteBatch) error {
+	var cErr *C.char
+	C.rocksdb_write((*C.struct_rocksdb_t)(db.c), opts.c, batch.c, &cErr)
+	if cErr != nil {
+		defer C.free(unsafe.Pointer(cErr))
+		return errors.New(C.GoString(cErr))
+	}
+	return nil
+}
+
 // NewIterator returns an Iterator over the the database that uses the
 // ReadOptions given.
 func (db *TransactionDB) NewIterator(opts *ReadOptions) *Iterator {
