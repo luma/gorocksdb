@@ -41,6 +41,20 @@ func OpenTransactionDb(
 	}, nil
 }
 
+// NewIterator returns an Iterator over the the database that uses the
+// ReadOptions given.
+func (db *TransactionDB) NewIterator(opts *ReadOptions) *Iterator {
+	cIter := C.rocksdb_create_iterator((*C.struct_rocksdb_t)(db.c), opts.c)
+	return NewNativeIterator(unsafe.Pointer(cIter))
+}
+
+// NewIteratorCF returns an Iterator over the the database and column family
+// that uses the ReadOptions given.
+func (db *TransactionDB) NewIteratorCF(opts *ReadOptions, cf *ColumnFamilyHandle) *Iterator {
+	cIter := C.rocksdb_create_iterator_cf((*C.struct_rocksdb_t)(db.c), opts.c, cf.c)
+	return NewNativeIterator(unsafe.Pointer(cIter))
+}
+
 // NewSnapshot creates a new snapshot of the database.
 func (db *TransactionDB) NewSnapshot() *Snapshot {
 	return NewNativeSnapshot(C.rocksdb_transactiondb_create_snapshot(db.c))
