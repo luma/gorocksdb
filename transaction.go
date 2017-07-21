@@ -96,7 +96,7 @@ func (transaction *Transaction) Delete(key []byte) error {
 
 // NewIterator returns an Iterator over the database that uses the
 // ReadOptions given.
-func (transaction *Transaction) NewIterator(opts *ReadOptions) *Iterator {
+func (transaction *Transaction) NewIterator(opts *ReadOptions) Iterator {
 	return NewNativeIterator(
 		unsafe.Pointer(C.rocksdb_transaction_create_iterator(transaction.c, opts.c)))
 }
